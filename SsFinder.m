@@ -34,5 +34,36 @@ classdef SsFinder
             % corr=xcorr(area,ifft(circshift(sss,56+kssb)));
             % plot(abs(corr));
         end
+        function peaks_i=findPeaks(samples,level)
+            arguments
+                samples
+                level = 0.9
+            end
+            threshold=max(samples)*level;
+            trs=threshold<=samples;
+            peaks_i=[];
+            max_val=-1;
+            max_i=-1;
+            is_seq=false;
+            for i=1:length(samples)
+                if trs(i)
+                    if ~is_seq
+                        is_seq=true;
+                        max_val=samples(i);
+                        max_i=i;
+                    else
+                        if (samples(i))>max_val
+                            max_i=i;
+                            max_val=samples(i);
+                        end
+                    end
+                else
+                    if is_seq
+                        is_seq=false;
+                        peaks_i(end+1)=max_i;
+                    end
+                end
+            end
+        end
     end
 end
