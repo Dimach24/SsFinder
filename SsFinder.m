@@ -1,9 +1,9 @@
 classdef SsFinder
     methods(Static)
-        function best_match = findPss(samples,max_freq_shift)
+        function best_match = findPss(samples,max_freq_shift,samples_per_symb)
             best_match=struct("max_abs",-1);
             for id=0:2
-                pss=[PssGenerator.generatePssByCellInfo(id) zeros(1,1920-127)];
+                pss=[PssGenerator.generatePssByCellInfo(id) zeros(1,samples_per_symb-127)];
                 for freq=(0:max_freq_shift)+56
                     corr=xcorr(samples,ifft(circshift(pss,freq)));
                     if best_match.max_abs<max(abs(corr))
