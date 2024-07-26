@@ -33,10 +33,9 @@ classdef SsFinder
         function peaks_i=findPeaks(samples,level)
             arguments
                 samples
-                level = 0.9
+                level = 100
             end
-            threshold=max(samples)*level;
-            trs=threshold<=samples;
+            trs=(level<=samples);
             peaks_i=[];
             max_val=-1;
             max_i=-1;
@@ -60,6 +59,20 @@ classdef SsFinder
                     end
                 end
             end
+        end
+        function [NCellId,kSSB,t_index,cropped]=processSignalByPeakNo(...
+                samples,...
+                from_freq,...
+                to_freq,...
+                samples_per_symb,...
+                peak_No)
+            match=SsFinder.findPss(samples,from_freq,to_freq,samples_per_symb);
+            peaks=match.lags(SsFinder.findPeaks(abs(match.corr),110));
+            NId1=SsFinder.checkSss(samples,peaks(1),match.kSSB,match.NId2,samples_per_symb);
+            NCellId=NId1*3+match.NId2;
+            kSSB=match.kSSB;
+            t_index=peaks(peak_No);
+            cropped=samples(t_index:end);
         end
     end
 end
