@@ -68,7 +68,7 @@ classdef SsFinder
                 peak_No)
             match=SsFinder.findPss(samples,from_freq,to_freq,samples_per_symb);
             peaks=match.lags(SsFinder.findPeaks(abs(match.corr),110));
-            NId1=SsFinder.checkSss(samples,peaks(1),match.kSSB,match.NId2,samples_per_symb);
+            NId1=SsFinder.checkSss(samples,peaks(peak_No),match.kSSB,match.NId2,samples_per_symb);
             NCellId=NId1*3+match.NId2;
             kSSB=match.kSSB;
             t_index=peaks(peak_No);
