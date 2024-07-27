@@ -33,9 +33,9 @@ classdef SsFinder
         function peaks_i=findPeaks(samples,level)
             arguments
                 samples
-                level = 100
+                level = 0.9
             end
-            trs=(level<=samples);
+            trs=(level*max(samples)<=samples);
             peaks_i=[];
             max_val=-1;
             max_i=-1;
@@ -65,9 +65,11 @@ classdef SsFinder
                 from_freq,...
                 to_freq,...
                 samples_per_symb,...
-                peak_No)
+                peak_No,....
+                peak_level)
             match=SsFinder.findPss(samples,from_freq,to_freq,samples_per_symb);
-            peaks=match.lags(SsFinder.findPeaks(abs(match.corr),110));
+            peaks=match.lags(SsFinder.findPeaks(abs(match.corr),peak_level));
+            peaks=peaks(peaks>0); % to exclude cropped part pss
             NId1=SsFinder.checkSss(samples,peaks(peak_No),match.kSSB,match.NId2,samples_per_symb);
             NCellId=NId1*3+match.NId2;
             kSSB=match.kSSB;
