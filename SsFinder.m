@@ -73,7 +73,7 @@ classdef SsFinder
             NId1=SsFinder.checkSss(samples,peaks(peak_No),match.kSSB,match.NId2,samples_per_symb);
             NCellId=NId1*3+match.NId2;
             kSSB=match.kSSB;
-            t_index=peaks(peak_No);
+            t_index=peaks(peak_No)+1;
             cropped=samples(t_index:end);
         end
     end
