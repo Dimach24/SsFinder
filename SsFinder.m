@@ -23,7 +23,7 @@ classdef SsFinder
                     if best_match.max_abs<max(abs(corr))
                         best_match.NId2=id;
                         best_match.freq=freq;
-                        best_match.corr=corr;
+                        best_match.corr=corr/sqrt(sum(abs(samples).^2)*sum(abs(pss).^2));
                         best_match.max_abs=max(abs(corr));
                     end
                 end
