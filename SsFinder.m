@@ -59,7 +59,7 @@ classdef SsFinder
                 samples
                 level = 0.9
             end
-            trs=(level*max(samples)<=samples);
+            trs=(level<=samples);
             peaks_i=[];
             max_val=-1;
             max_i=-1;
