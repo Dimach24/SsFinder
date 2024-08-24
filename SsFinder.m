@@ -1,21 +1,21 @@
 classdef SsFinder
     methods(Static)
-        function best_match = findPss(samples,from_freq,to_freq,samples_per_symb)
+        function best_match = findPss(samples,from_freq,to_freq,samples_per_symbol)
             % finds primary SS in time-domain complex signal
-            % returns structure of the match, containig next fields:
+            % returns structure of the match, containing next fields:
             % *NId2 - the part of NcellID (see 7.4.2.1 of TS38.211)
             % *corr - correlation between generated signal and `samples`
             % *lags - correlation `X` axis
             % *max_abs - maximum absolute value of the correlation func
             % *freq - subcarier index where starts PSS
             % *kSSB - subcarier shift to the SSB
-
-            best_match=struct("max_abs",-1);
             
+            best_match=struct("max_abs",-1);
+            pss_eng = 127; % reference SS energy
             % foreach NID2
             for id=0:2
                 % generate PSS by NID2
-                pss=[PssGenerator.generatePssByCellInfo(id) zeros(1,samples_per_symb-127)];
+                pss=[PssGenerator.generatePssByCellInfo(id) zeros(1,samples_per_symbol-127)];
                 % foreach freq. shift
                 for freq=(from_freq:to_freq)+56
                     corr=xcorr(samples,ifft(circshift(pss,freq)));
@@ -23,25 +23,43 @@ classdef SsFinder
                     if best_match.max_abs<max(abs(corr))
                         best_match.NId2=id;
                         best_match.freq=freq;
-                        best_match.corr=corr/sqrt(sum(abs(samples).^2)*sum(abs(pss).^2));
                         best_match.max_abs=max(abs(corr));
+                        best_match.corr=corr;
                     end
                 end
             end
             [~,best_match.lags]=xcorr(samples,pss);
             best_match.kSSB=best_match.freq-56;
+            signal_eng=zeros(1,length(samples));
+            signal_eng(1)=sum(abs(samples(1:samples_per_symbol)).^2);
+            for i=2:length(samples)
+                if i<length(samples)-samples_per_symbol
+                    next_eng=abs(samples(i+samples_per_symbol-1)).^2;
+                else
+                    next_eng=0;
+                end
+                prev_eng=abs(samples(i-1)).^2;
+                signal_eng(i)=signal_eng(i-1)+next_eng-prev_eng;
+            end
+            % cropping to exclude predicted by the end of PSS part
+            best_match.corr=best_match.corr(best_match.lags>=0);
+            best_match.lags=best_match.lags(best_match.lags>=0);
+            % normalizing
+            best_match.corr=best_match.corr./sqrt(signal_eng*pss_eng);
+            % excluding `NaN` and `inf` values where received signal energy = 0. 
+            best_match.corr(signal_eng==0)=0; 
         end
-        function [NId1,max_corr] = checkSss(samples, pss_index, kssb, NId2, samples_per_symb)
-            % finds NID1 by complex signal in time domain, 
+        function [NId1,max_corr] = checkSss(samples, pss_index, kssb, NId2, samples_per_symbol)
+            % finds NID1 by complex signal in time domain,
             % time offset to PSS, and other parameters
             % choosing area, where to check SSS
-            area=samples(pss_index+2*samples_per_symb:pss_index+3*samples_per_symb);
+            area=samples(pss_index+2*samples_per_symbol:pss_index+3*samples_per_symbol);
             max_corr=-1;
             
             % foreach NID1 calculate NcellID
             for id=(0:335)*3+NId2
                 % generate signal by NcellID
-                sss=[SssGenerator.generateSssByCellInfo(id) zeros(1,samples_per_symb-127)];
+                sss=[SssGenerator.generateSssByCellInfo(id) zeros(1,samples_per_symbol-127)];
                 corr=xcorr(area,ifft(circshift(sss,56+kssb)));
                 current=max(abs(corr));
                 % check if current ID is better
@@ -51,7 +69,7 @@ classdef SsFinder
                 end
             end
         end
-
+        
         function peaks_i=findPeaks(samples,level)
             % finds peaks by level
             % finds indexes of max values in continuous parts that exceed than a given level
@@ -91,7 +109,7 @@ classdef SsFinder
                 samples_per_symb,...
                 peak_No,....
                 peak_level)
-            % finds PSS, checks SSS, extracts offsets and 
+            % finds PSS, checks SSS, extracts offsets and
             % NcellID from time-domain complex signal samples
             match=SsFinder.findPss(samples,from_freq,to_freq,samples_per_symb);
             peaks=match.lags(SsFinder.findPeaks(abs(match.corr),peak_level));
